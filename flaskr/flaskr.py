@@ -63,6 +63,13 @@ def show_entries():
     entries = cur.fetchall()
     return render_template('show_entries.html', entries=entries)
 
+@app.route('/api/search')
+def filter_entries():
+    searchWord = request.args.get("q")
+    db = get_db()
+    cur = db.execute(f'SELECT title, text, created_at FROM entries where title like "%{searchWord}%" ORDER BY id DESC')
+    entries = cur.fetchall()
+    return render_template('show_entries.html', entries=entries)
 
 @app.route('/add', methods=['POST'])
 def add_entry():
