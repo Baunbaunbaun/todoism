@@ -2,6 +2,8 @@ import os
 import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, abort, \
     render_template, flash
+import requests
+from datetime import date
 
 app = Flask(__name__)  # create the application instance :)
 app.config.from_object(__name__)  # load config from this file , flaskr.py
@@ -75,11 +77,20 @@ def filter_entries():
 def add_entry():
     if not session.get('logged_in'):
         abort(401)
+    
+    titel_str = request.form['title']
+    text_str = request.form['text']
+    created_at_str = str(date.today())
+
     db = get_db()
-    db.execute('INSERT INTO entries (title, text, created_at) VALUES (?, ?, CURRENT_DATE)',
-               [request.form['title'], request.form['text']])
+    db.execute('INSERT INTO entries (title, text, created_at) VALUES (?, ?, ?)',
+               [titel_str, text_str, created_at_str])
     db.commit()
     flash('New entry was successfully posted')
+    
+    entry = {'title': titel_str, 'text': text_str, 'created_at': created_at_str}
+    status_code = post_json_data('https://postman-echo.com/post', payload=entry)
+    print(f'HTTP post status: {status_code}')
     return redirect(url_for('show_entries'))
 
 
@@ -97,9 +108,14 @@ def login():
             return redirect(url_for('show_entries'))
     return render_template('login.html', error=error)
 
-
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     flash('You were logged out')
     return redirect(url_for('show_entries'))
+
+def post_json_data(url, payload):
+    r = requests.post(url, json=payload)
+    return r.status_code
+
+
