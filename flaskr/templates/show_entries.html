@@ -3,8 +3,6 @@
   {% if session.logged_in %}
     <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
       <dl>
-        <dt>Created_at:
-        <dd><input type=text size=10 name=created_at>
         <dt>Title:
         <dd><input type=text size=30 name=title>
         <dt>Text:
@@ -16,7 +14,7 @@
   <ul class=entries>
   {% for entry in entries %}
     <li>{{ entry.created_at }}
-    <li><h2>{{ entry.title }}</>{{ entry.text|safe }}
+    <li><h2>{{ entry.title }}</h2>{{ entry.text|safe }}
   {% else %}
     <li><em>Unbelievable.  No entries here so far</em>
   {% endfor %}
