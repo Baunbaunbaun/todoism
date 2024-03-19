@@ -28,10 +28,18 @@ def init_db():
     db.commit()
 
 
+def add_created_at_column_to_db():
+    db = get_db()
+    with app.open_resource('created_at_column.sql', mode='r') as f:
+        db.cursor().executescript(f.read())
+    db.commit()
+
+
 @app.cli.command('initdb')
 def initdb_command():
     """Initializes the database."""
     init_db()
+    add_created_at_column_to_db()
     print('Initialized the database.')
 
 
@@ -65,6 +73,7 @@ def show_entries():
     entries = cur.fetchall()
     return render_template('show_entries.html', entries=entries)
 
+
 @app.route('/api/search')
 def filter_entries():
     searchWord = request.args.get("q")
@@ -73,24 +82,25 @@ def filter_entries():
     entries = cur.fetchall()
     return render_template('show_entries.html', entries=entries)
 
+
 @app.route('/add', methods=['POST'])
 def add_entry():
     if not session.get('logged_in'):
         abort(401)
     
-    titel_str = request.form['title']
+    title_str = request.form['title']
     text_str = request.form['text']
     created_at_str = str(date.today())
 
     db = get_db()
     db.execute('INSERT INTO entries (title, text, created_at) VALUES (?, ?, ?)',
-               [titel_str, text_str, created_at_str])
+               [title_str, text_str, created_at_str])
     db.commit()
     flash('New entry was successfully posted')
-    
-    entry = {'title': titel_str, 'text': text_str, 'created_at': created_at_str}
-    status_code = post_json_data('https://postman-echo.com/post', payload=entry)
-    print(f'HTTP post status: {status_code}')
+
+    status_code = echo_entry(title_str, text_str, created_at_str)
+    print(f'Echo Postman Status: {status_code}')
+
     return redirect(url_for('show_entries'))
 
 
@@ -108,14 +118,19 @@ def login():
             return redirect(url_for('show_entries'))
     return render_template('login.html', error=error)
 
+
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     flash('You were logged out')
     return redirect(url_for('show_entries'))
 
+
 def post_json_data(url, payload):
     r = requests.post(url, json=payload)
     return r.status_code
 
 
+def echo_entry(title, text, created_at):
+    entry = {'title': title, 'text': text, 'created_at': created_at}
+    return post_json_data('https://postman-echo.com/post', payload=entry)
