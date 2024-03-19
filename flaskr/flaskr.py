@@ -75,7 +75,7 @@ def show_entries():
 
 
 @app.route('/api/search')
-def filter_entries():
+def filter_entries() -> str:
     searchWord = request.args.get("q")
     db = get_db()
     cur = db.execute(f'SELECT title, text, created_at FROM entries where title like "%{searchWord}%" ORDER BY id DESC')
@@ -99,7 +99,7 @@ def add_entry():
     flash('New entry was successfully posted')
 
     status_code = echo_entry(title_str, text_str, created_at_str)
-    print(f'Echo Postman Status: {status_code}')
+    print(f'\nEcho Postman Status: {status_code}\n')
 
     return redirect(url_for('show_entries'))
 
@@ -126,11 +126,12 @@ def logout():
     return redirect(url_for('show_entries'))
 
 
-def post_json_data(url, payload):
+def post_json_data(url: str, payload: dict) -> int:
     r = requests.post(url, json=payload)
+    print('Postman dump:\n\n', r.text)
     return r.status_code
 
 
-def echo_entry(title, text, created_at):
+def echo_entry(title: str, text: str, created_at: str) -> int:
     entry = {'title': title, 'text': text, 'created_at': created_at}
     return post_json_data('https://postman-echo.com/post', payload=entry)
